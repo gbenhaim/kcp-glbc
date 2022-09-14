@@ -1,0 +1,39 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  annotations:
+    build.appstudio.redhat.com/commit_sha: '{{revision}}'
+    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/max-keep-runs: "3"
+    pipelinesascode.tekton.dev/on-event: '[push]'
+    pipelinesascode.tekton.dev/on-target-branch: '[main]'
+  creationTimestamp: null
+  labels:
+    appstudio.openshift.io/application: kcp-glbc-app
+    appstudio.openshift.io/component: kcp-glbc
+    build.appstudio.openshift.io/component: kcp-glbc
+    pipelines.appstudio.openshift.io/type: build
+  name: kcp-glbc-on-push
+  namespace: kcp-glbc-dev
+spec:
+  params:
+  - name: git-url
+    value: '{{repo_url}}'
+  - name: revision
+    value: '{{revision}}'
+  - name: output-image
+    value: quay.io/productcicd/hacbs-apps:{{revision}}
+  - name: dockerfile
+    value: https://raw.githubusercontent.com/gbenhaim/kcp-glbc/main/./Dockerfile
+  pipelineRef:
+    bundle: quay.io/redhat-appstudio/hacbs-templates-bundle:510fa6e99f1fa1f816c96354bbaf1ad155c6d9c3
+    name: docker-build
+  workspaces:
+  - name: workspace
+    persistentVolumeClaim:
+      claimName: appstudio
+    subPath: kcp-glbc-on-push-{{revision}}
+  - name: registry-auth
+    secret:
+      secretName: redhat-appstudio-registry-pull-secret
+status: {}
